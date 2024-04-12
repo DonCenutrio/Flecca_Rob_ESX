@@ -184,7 +184,7 @@ AddEventHandler('cenu:taladroInventoryClient',function(taladro)
     hasTaladro=taladro
     local xPlayerMoneyRob=PlayerPedId()
     TaskStartScenarioInPlace(xPlayerMoneyRob, "mini@repair", 0, true)
-    Wait(10000)
+    Wait(90000)
     ClearPedTasks(xPlayerMoneyRob)
 end)
 
@@ -193,7 +193,7 @@ AddEventHandler('cenu:actionRob',function(num)
     if num==1 or num==2 then
         local xPlayerMoneyRob=PlayerPedId()
         TaskStartScenarioInPlace(xPlayerMoneyRob, "mp_safebox_carry", 0, true)
-        Wait(10000)
+        Wait(30000)
         ClearPedTasks(xPlayerMoneyRob)
     elseif num==3 then
         ESX.ShowNotification('Taladrado')
