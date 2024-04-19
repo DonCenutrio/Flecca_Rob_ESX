@@ -124,6 +124,7 @@ AddEventHandler('cenu:inicioFlecca', function(bankId)
                     Banks[bankId]["Robado"]={false,false,false}
                     Banks[bankId]["Cooldown"]=true
                     cooldown(bankId)
+                    TriggerClientEvent('cenu:inicioFleccaAll', -1,bankId)
                     TriggerClientEvent('cenu:inicioFlecca', _source, taladro)
                 else
                     print('No se inicia el robo')

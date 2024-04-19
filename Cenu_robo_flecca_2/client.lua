@@ -55,6 +55,19 @@ AddEventHandler('cenu:inicioFlecca',function(taladro)
     Banks[bankId]["Iniciado"]=true
 end)
 
+RegisterNetEvent('cenu:inicioFleccaAll')
+AddEventHandler('cenu:inicioFleccaAll',function()
+    local playerData=ESX.GetPlayerData()
+    if playerData.job.label=="LSPD" then
+        Banks[bankId]["Robado"] = {false, false, false}
+        Banks[bankId]["DoorOpen"] = false
+        Banks[bankId]["hackeado"] = false
+        Banks[bankId]["Sincro"]=false
+        --sonidoAlarma()
+        Banks[bankId]["Iniciado"]=true
+    end
+end)
+
 -- GENERATE MONEY PROP
 function generateMoney(banco)
     RequestModel(moneyModel)
@@ -81,20 +94,22 @@ function deleteMoney(banco)
 end
 
 function OpenDoor(time_cooldown)
-    Banks[bankId]["Sincro"]=false
-    local door = GetClosestObjectOfType(Banks[bankId]["Terminal"].x, Banks[bankId]["Terminal"].y, Banks[bankId]["Terminal"].z, 3.0, 2121050683)
-    rotation = Banks[bankId]["Rotation"][1]
-    Banks[bankId]["DoorOpen"] = true
-    while rotation ~= Banks[bankId]["Rotation"][2] do
-        Wait(10)
-        rotation = rotation - 0.125
-        SetEntityRotation(door, 0.0, 0.0, rotation)
-        -- CALLBACK TO SERVER
-        TriggerServerEvent('cenu:sincroPuerta', Banks[bankId]["Terminal"], rotation)
-    end
-    ESX.ShowNotification('La puerta se cerrará en 2 minutos')
-    CloseDoor(time_cooldown)
-    --Wait(5000)
+    Citizen.CreateThread(function()
+        Banks[bankId]["Sincro"]=false
+        local door = GetClosestObjectOfType(Banks[bankId]["Terminal"].x, Banks[bankId]["Terminal"].y, Banks[bankId]["Terminal"].z, 3.0, 2121050683)
+        rotation = Banks[bankId]["Rotation"][1]
+        Banks[bankId]["DoorOpen"] = true
+        while rotation ~= Banks[bankId]["Rotation"][2] do
+            Wait(10)
+            rotation = rotation - 0.125
+            SetEntityRotation(door, 0.0, 0.0, rotation)
+            -- CALLBACK TO SERVER
+            TriggerServerEvent('cenu:sincroPuerta', Banks[bankId]["Terminal"], rotation)
+        end
+        ESX.ShowNotification('La puerta se cerrará en 2 minutos')
+        CloseDoor(time_cooldown)
+        --Wait(5000)
+    end)
 end
 
 RegisterNetEvent('cenu:animacionPuerta')
@@ -106,6 +121,8 @@ end)
 function CloseDoor(time_cooldown)
     Citizen.CreateThread(function()
         Wait(time_cooldown)
+        Banks[bankId]["DoorOpen"]=false
+        Banks[bankId]["Iniciado"]=false
         local door = GetClosestObjectOfType(Banks[bankId]["Terminal"].x, Banks[bankId]["Terminal"].y, Banks[bankId]["Terminal"].z, 3.0, 2121050683)
         while rotation ~= Banks[bankId]["Rotation"][1] do
             Wait(10)
@@ -114,7 +131,6 @@ function CloseDoor(time_cooldown)
             -- CALLBACK TO SERVER
             TriggerServerEvent('cenu:sincroPuerta', Banks[bankId]["Terminal"], rotation)
         end
-        Banks[bankId]["Iniciado"]=false
         --Wait(5000)
     end)
 end
@@ -184,7 +200,7 @@ AddEventHandler('cenu:taladroInventoryClient',function(taladro)
     hasTaladro=taladro
     local xPlayerMoneyRob=PlayerPedId()
     TaskStartScenarioInPlace(xPlayerMoneyRob, "mini@repair", 0, true)
-    Wait(90000)
+    Wait(10000)
     ClearPedTasks(xPlayerMoneyRob)
 end)
 
@@ -193,7 +209,7 @@ AddEventHandler('cenu:actionRob',function(num)
     if num==1 or num==2 then
         local xPlayerMoneyRob=PlayerPedId()
         TaskStartScenarioInPlace(xPlayerMoneyRob, "mp_safebox_carry", 0, true)
-        Wait(30000)
+        Wait(10000)
         ClearPedTasks(xPlayerMoneyRob)
     elseif num==3 then
         ESX.ShowNotification('Taladrado')
@@ -208,8 +224,9 @@ ESX = exports["es_extended"]:getSharedObject()
 while true do
     Wait(0)
     xPlayer = PlayerPedId()
+    local playerData=ESX.GetPlayerData()
     -- DETECT IF PLAYER SHOOTS AND SEND TRIGGER TO SERVER
-    if IsPedShooting(xPlayer) then
+    if IsPedShooting(xPlayer) and playerData.job.label~='LSPD' then
         for bankName, _ in pairs(Banks) do
             if IsPedShootingInArea(xPlayer,Banks[bankName]["Area"][1][1],Banks[bankName]["Area"][3][1],Banks[bankName]["Area"][5][1],Banks[bankName]["Area"][2][1],Banks[bankName]["Area"][4][1],Banks[bankName]["Area"][6][1],false,false) then
                 bankId=bankName
@@ -222,8 +239,8 @@ while true do
         propmoney()
         llamada=true
     end
-    local playerData=ESX.GetPlayerData()
-    if playerData.job.label=='police' and Banks[bankId]["Iniciado"]==true and GetDistanceBetweenCoords(Banks[bankId]["Terminal"] - GetEntityCoords(xPlayer)) < 5 then
+
+    if playerData.job.label=='LSPD' and Banks[bankId]["Iniciado"]==true and GetDistanceBetweenCoords(Banks[bankId]["Terminal"]-GetEntityCoords(xPlayer)) < 5 then
         DrawMarker(2, Banks[bankId]["Terminal"].x, Banks[bankId]["Terminal"].y, Banks[bankId]["Terminal"].z, 0, 0, 0, 0, 0, 0, 0.8001, 0.8001, 0.6001, 52, 155, 0, 200, 0, 0, 0, 0)
         if GetDistanceBetweenCoords(Banks[bankId]["Terminal"] - GetEntityCoords(xPlayer)) < 1.1 then
             ESX.ShowHelpNotification('~g~E~w~ Para abrir caja fuerte')
@@ -231,10 +248,10 @@ while true do
                     OpenDoor(300000)
             end
         end
-    else
+    elseif playerData.job.label~='LSPD' then
         if Banks[bankId]["hackeado"] == false and Banks[bankId]["Iniciado"] == true and Banks[bankId]["DoorOpen"] == false then
             DrawMarker(2, Banks[bankId]["Terminal"].x, Banks[bankId]["Terminal"].y, Banks[bankId]["Terminal"].z, 0, 0, 0, 0, 0, 0, 0.8001, 0.8001, 0.6001, 52, 155, 0, 200, 0, 0, 0, 0)
-            if GetDistanceBetweenCoords(Banks[bankId]["Terminal"] - GetEntityCoords(xPlayer)) < 1.1 then
+            if GetDistanceBetweenCoords(Banks[bankId]["Terminal"]-GetEntityCoords(xPlayer)) < 1.1 then
                 ESX.ShowHelpNotification('~g~E~w~ Para hackear caja fuerte')
                 if IsControlJustPressed(0, 38) then
                         -- method 1:
@@ -244,8 +261,10 @@ while true do
                                 Wait(3000)
                                 print('inicio script abrir caja fuerte')
                                 ESX.Progressbar("Hackeando", 10000,{
-                                    FreezePlayer = true, 
+                                    FreezePlayer = true,
+                                    TaskStartScenarioInPlace(xPlayer, "PROP_HUMAN_ATM", 10000, true),
                                 })
+                                ClearPedTasks(xPlayer)
                                 OpenDoor(Banks[bankId]["Time"])
                             elseif outcome == false then
                                 print("Failed! Reason: "..reason)

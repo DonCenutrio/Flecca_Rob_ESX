@@ -10,8 +10,10 @@
     time=1
 
 --MIN POLICE
-    minPolice=0
+    minPolice=2
 
+--COOLDOWN ENTRE BANCOS
+    cooldownTime=1200000
 --BANKS
     Banks={
         --FLECCA PLAZA CUBOS
@@ -57,8 +59,8 @@
             },
             --IS ON COOLDOWN
             ["Cooldown"]=false,
-            --COOLDOWN TIME
-            ["Time"]=120000,
+            --TIME FOR DOOR CLOSE
+            ["Time"]=10000,
             --IS ROB
             ["Robado"]={
                 false,
